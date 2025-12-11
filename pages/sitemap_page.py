@@ -9,7 +9,7 @@ class SitemapPage(BasePage):
         return self.page.locator("(//div[contains(@class,'list-items-spacing')])[1]")
     
     def open(self) -> None:
-        self.open(self.URL)
+        super().open(self.URL)
 
     def open_top_destination(self, destination_name: str) -> None:
         """
