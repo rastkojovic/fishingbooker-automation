@@ -6,7 +6,7 @@ class SitemapPage(BasePage):
 
     @property
     def top_destinations_root(self) -> Locator:
-        return self.page.locator("(//div[contains(@class,'list-items-spacing')])[1]")
+        return self.page.locator("xpath=//h1[contains(text(), 'Top Fishing Destinations')]/following-sibling::div[1]")
     
     def open(self) -> None:
         super().open(self.URL)

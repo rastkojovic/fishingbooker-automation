@@ -1,6 +1,5 @@
 from pages.base_page import BasePage
-from playwright.sync_api import Locator
-import time
+from playwright.sync_api import Locator, expect
 
 
 class DestinationPage(BasePage):
@@ -13,24 +12,12 @@ class DestinationPage(BasePage):
     def filter_dialog(self) -> Locator:
         return self.page.get_by_role("dialog")
 
-    def wait_for_charters_to_load(self, min_cards: int = 10, timeout: int = 10) -> None:
+    def wait_for_charters_to_load(self, timeout_ms:int = 10000) -> None:
         '''
         Waits until the number of charter cards is >= 10
         '''
-        start = time.time()
-
-        while True:
-            count = self.charter_cards.count()
-
-            if count >= min_cards:
-                return
-            
-            if time.time() - start > timeout:
-                raise TimeoutError(
-                    f"Timeout! Expected at least {min_cards} but got {count}!"
-                )
-            
-            time.sleep(0.1)
+        cards = self.charter_cards
+        expect(cards.nth(9)).to_be_visible(timeout=timeout_ms)
 
     def _card(self, index: int = 0) -> Locator:
         return self.charter_cards.nth(index)
@@ -68,13 +55,24 @@ class DestinationPage(BasePage):
     def sort_by_recommended(self) -> None:
         self.page.get_by_test_id("sort-recommended-button").click()
 
-    def get_all_prices(self) -> list[float]:
+    def _extract_price_from_str(self, char_string: str) -> int:
+        """
+        Removes all non-digit characters from string and returns an int
+        ex. € 1,234 -> 1234
+        """
+        digits = "".join(char for char in char_string if char.isdigit())
+        if not digits:
+            raise ValueError(f"No digits found in price text: '{char_string}'")
+        return int(digits)
+
+
+    def get_all_prices(self) -> list[int]:
         price_elements = self.page.get_by_test_id("charter-card-trip-from-container").get_by_text("€")
         text_prices = price_elements.all_inner_texts()
 
-        prices: list[float] = []
-        for t in text_prices:
-            current_price = float(t.split("€")[1])
+        prices: list[int] = []
+        for char in text_prices:
+            current_price = self._extract_price_from_str(char)
             prices.append(current_price)
 
         return prices
@@ -86,10 +84,11 @@ class DestinationPage(BasePage):
         button = self.get_wishlist_button(index)
         button.hover()
 
-        tooltip_root = self.page.locator("div[elevation='2']")
+        tooltip_root = self.page.locator("xpath=//div[contains(@style, 'position: absolute')]/div[@elevation='2']")
         tooltip_root.wait_for(state="visible", timeout=3000)
-        tooltip_text = tooltip_root.locator("div").last
-        return tooltip_text.inner_text()
+        tooltip_text = tooltip_root.locator("xpath=.//div[normalize-space(text())!='']")
+        tooltip_text.wait_for(state="visible", timeout=3000)
+        return tooltip_text.inner_text().strip()
 
     # Filter Dialog
     def filter_price_highest(self):
