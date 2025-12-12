@@ -19,26 +19,26 @@ class DestinationPage(BasePage):
         cards = self.charter_cards
         expect(cards.nth(9)).to_be_visible(timeout=timeout_ms)
 
-    def _card(self, index: int = 0) -> Locator:
+    def _card(self, index: int) -> Locator:
         return self.charter_cards.nth(index)
     
-    def get_charter_name(self, index: int = 0) -> str:
-        return self._card(index).get_by_test_id("charter-card-title").inner_text()
+    def get_charter_name_link(self, index: int) -> Locator:
+        return self._card(index).get_by_test_id("charter-card-title")
+    
+    def get_ship_length(self, index: int) -> Locator:
+        return self._card(index).locator("xpath=.//div[@data-testid='charter-card-boat-silhouette']/div/p/span")
 
-    def get_ship_length(self, index: int = 0) -> str:
-        return self._card(index).locator("xpath=.//div[@data-testid='charter-card-boat-silhouette']/div/p/span").inner_text()
+    def get_max_crew(self, index: int) -> Locator:
+        return self._card(index).locator("xpath=.//div[@data-testid='charter-card-boat-silhouette']/p/span")
 
-    def get_max_crew(self, index: int = 0) -> str:
-        return self._card(index).locator("xpath=.//div[@data-testid='charter-card-boat-silhouette']/p/span").inner_text()
+    def get_charter_price(self, index: int) -> Locator:
+        return self._card(index).get_by_test_id("charter-card-trip-from-container").get_by_text("€")
 
-    def get_charter_price(self, index: int = 0) -> str:
-        return self._card(index).get_by_test_id("charter-card-trip-from-container").get_by_text("€").inner_text()
-
-    def click_see_availability(self, index: int = 0) -> None:
+    def click_see_availability(self, index: int) -> None:
         self._card(index).get_by_test_id("charter-card-see-availability-button").click()
 
-    def get_availability_button_text(self, index: int = 0) -> str:
-        return self._card(index).get_by_test_id("charter-card-see-availability-button").inner_text()
+    def get_availability_button(self, index:int) -> Locator:
+        return self._card(index).get_by_test_id("charter-card-see-availability-button")
 
     def click_sort_by_price_filter(self):
         self.page.get_by_role("button", name="Sort by Price (Lowest)").click()
@@ -55,14 +55,13 @@ class DestinationPage(BasePage):
     def sort_by_recommended(self) -> None:
         self.page.get_by_test_id("sort-recommended-button").click()
 
-    def _extract_price_from_str(self, char_string: str) -> int:
+    def _extract_digits(self, char_string: str) -> int:
         """
         Removes all non-digit characters from string and returns an int
-        ex. € 1,234 -> 1234
         """
         digits = "".join(char for char in char_string if char.isdigit())
         if not digits:
-            raise ValueError(f"No digits found in price text: '{char_string}'")
+            raise ValueError(f"No digits found in string: '{char_string}'")
         return int(digits)
 
 
@@ -72,15 +71,16 @@ class DestinationPage(BasePage):
 
         prices: list[int] = []
         for char in text_prices:
-            current_price = self._extract_price_from_str(char)
+            current_price = self._extract_digits(char)
             prices.append(current_price)
 
         return prices
     
-    def get_wishlist_button(self, index: int = 0) -> Locator:
+    def get_wishlist_button(self, index: int) -> Locator:
         return self._card(index).get_by_test_id("add-to-wishlist")
     
-    def get_wishlist_tooltip(self, index: int = 0) -> str:
+    
+    def get_wishlist_tooltip_str(self, index: int) -> str:
         button = self.get_wishlist_button(index)
         button.hover()
 
@@ -90,7 +90,6 @@ class DestinationPage(BasePage):
         tooltip_text.wait_for(state="visible", timeout=3000)
         return tooltip_text.inner_text().strip()
 
-    # Filter Dialog
     def filter_price_highest(self):
         self.filter_dialog.locator("#-price").check()
 

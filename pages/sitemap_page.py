@@ -16,4 +16,3 @@ class SitemapPage(BasePage):
         Opens a link in the 'Top Fishing Destinations' section based on full destination name (e.g. 'Fishing Charters in Key West').
         """
         self.top_destinations_root.get_by_role("link", name=destination_name).click()
-        self.wait_for_network_idle()
